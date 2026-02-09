@@ -29,9 +29,6 @@ class _ScanQRState extends State<ScanQR> {
   @override
   void initState() {
     super.initState();
-    if (_useCamera) {
-      _requestCamera();
-    }
   }
 
   String _firstNameFromFull(String fullName) {
@@ -245,10 +242,10 @@ class _ScanQRState extends State<ScanQR> {
                       ),
                     ],
                     TextButton(
-                      onPressed: () {
-                        setState(() => _useCamera = false);
-                        _controller.stop();
-                      },
+                    onPressed: () {
+                      setState(() => _useCamera = false);
+                      _controller.stop();
+                    },
                       child: const Text("Use manual entry"),
                     ),
                   ] else ...[
@@ -264,9 +261,9 @@ class _ScanQRState extends State<ScanQR> {
                     const SizedBox(height: 12),
                     if (kIsWeb)
                       TextButton(
-                        onPressed: () {
+                        onPressed: () async {
                           setState(() => _useCamera = true);
-                          _requestCamera();
+                          await _requestCamera();
                         },
                         child: const Text("Use camera scanner"),
                       ),

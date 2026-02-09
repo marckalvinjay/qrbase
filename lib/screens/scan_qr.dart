@@ -141,6 +141,9 @@ class _ScanQRState extends State<ScanQR> {
     if (_startingCamera) return;
     _startingCamera = true;
     try {
+      if (_controller.value.isRunning) {
+        return;
+      }
       await _controller.start();
       if (!mounted) return;
       setState(() => _cameraError = null);
@@ -242,10 +245,12 @@ class _ScanQRState extends State<ScanQR> {
                       ),
                     ],
                     TextButton(
-                    onPressed: () {
-                      setState(() => _useCamera = false);
-                      _controller.stop();
-                    },
+                      onPressed: () async {
+                        setState(() => _useCamera = false);
+                        if (_controller.value.isRunning) {
+                          await _controller.stop();
+                        }
+                      },
                       child: const Text("Use manual entry"),
                     ),
                   ] else ...[
@@ -262,6 +267,9 @@ class _ScanQRState extends State<ScanQR> {
                     if (kIsWeb)
                       TextButton(
                         onPressed: () async {
+                          if (_controller.value.isRunning) {
+                            await _controller.stop();
+                          }
                           setState(() => _useCamera = true);
                           await _requestCamera();
                         },

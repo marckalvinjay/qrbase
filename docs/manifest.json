@@ -1,11 +1,11 @@
 {
-    "name": "qr_attendance",
-    "short_name": "qr_attendance",
+    "name": "Entry Grid",
+    "short_name": "Entry Grid",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FB9EB7",
+    "theme_color": "#FB9EB7",
+    "description": "Entry Grid - attendance tracking.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

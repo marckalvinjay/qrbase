@@ -24,6 +24,7 @@ class _ScanQRState extends State<ScanQR> {
   bool _useCamera = kIsWeb;
   bool _hasScanned = false;
   String? _cameraError;
+  bool _startingCamera = false;
 
   @override
   void initState() {
@@ -140,11 +141,17 @@ class _ScanQRState extends State<ScanQR> {
   }
 
   Future<void> _requestCamera() async {
+    if (_startingCamera) return;
+    _startingCamera = true;
     try {
       await _controller.start();
+      if (!mounted) return;
+      setState(() => _cameraError = null);
     } catch (e) {
       if (!mounted) return;
       setState(() => _cameraError = e.toString());
+    } finally {
+      _startingCamera = false;
     }
   }
 
@@ -240,6 +247,7 @@ class _ScanQRState extends State<ScanQR> {
                     TextButton(
                       onPressed: () {
                         setState(() => _useCamera = false);
+                        _controller.stop();
                       },
                       child: const Text("Use manual entry"),
                     ),

@@ -23,6 +23,16 @@ class _ScanQRState extends State<ScanQR> {
   bool _isTimeIn = true;
   bool _useCamera = kIsWeb;
   bool _hasScanned = false;
+  bool? _permissionGranted;
+  String? _cameraError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_useCamera) {
+      _requestCamera();
+    }
+  }
 
   String _firstNameFromFull(String fullName) {
     final parts = fullName.split(',').map((p) => p.trim()).toList();
@@ -130,6 +140,15 @@ class _ScanQRState extends State<ScanQR> {
     await _controller.start();
   }
 
+  Future<void> _requestCamera() async {
+    try {
+      await _controller.start();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _cameraError = e.toString());
+    }
+  }
+
   @override
   void dispose() {
     _codeController.dispose();
@@ -175,6 +194,28 @@ class _ScanQRState extends State<ScanQR> {
                             MobileScanner(
                               controller: _controller,
                               onDetect: _handleCameraDetect,
+                              onPermissionSet: (context, granted) {
+                                if (!mounted) return;
+                                setState(() {
+                                  _permissionGranted = granted;
+                                  if (granted) _cameraError = null;
+                                });
+                              },
+                              errorBuilder: (context, error, child) {
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Text(
+                                      error.errorDetails?.message ??
+                                          'Camera error.',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                             Positioned.fill(
                               child: DecoratedBox(
@@ -192,6 +233,18 @@ class _ScanQRState extends State<ScanQR> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (_permissionGranted == false || _cameraError != null) ...[
+                      Text(
+                        _cameraError ?? 'Camera permission denied.',
+                        style: const TextStyle(color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _requestCamera,
+                        child: const Text("Try enable camera"),
+                      ),
+                    ],
                     TextButton(
                       onPressed: () {
                         setState(() => _useCamera = false);
@@ -213,6 +266,7 @@ class _ScanQRState extends State<ScanQR> {
                       TextButton(
                         onPressed: () {
                           setState(() => _useCamera = true);
+                          _requestCamera();
                         },
                         child: const Text("Use camera scanner"),
                       ),

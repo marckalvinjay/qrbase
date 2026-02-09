@@ -23,7 +23,6 @@ class _ScanQRState extends State<ScanQR> {
   bool _isTimeIn = true;
   bool _useCamera = kIsWeb;
   bool _hasScanned = false;
-  bool? _permissionGranted;
   String? _cameraError;
 
   @override
@@ -194,14 +193,7 @@ class _ScanQRState extends State<ScanQR> {
                             MobileScanner(
                               controller: _controller,
                               onDetect: _handleCameraDetect,
-                              onPermissionSet: (context, granted) {
-                                if (!mounted) return;
-                                setState(() {
-                                  _permissionGranted = granted;
-                                  if (granted) _cameraError = null;
-                                });
-                              },
-                              errorBuilder: (context, error, child) {
+                              errorBuilder: (context, error) {
                                 return Center(
                                   child: Padding(
                                     padding: const EdgeInsets.all(12),
@@ -233,9 +225,9 @@ class _ScanQRState extends State<ScanQR> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    if (_permissionGranted == false || _cameraError != null) ...[
+                    if (_cameraError != null) ...[
                       Text(
-                        _cameraError ?? 'Camera permission denied.',
+                        _cameraError!,
                         style: const TextStyle(color: Colors.white),
                         textAlign: TextAlign.center,
                       ),

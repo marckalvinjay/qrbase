@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -24,12 +26,7 @@ class _ScanQRState extends State<ScanQR> {
   bool _useCamera = kIsWeb;
   bool _hasScanned = false;
   String? _cameraError;
-  bool _startingCamera = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  Timer? _resetTimer;
 
   String _firstNameFromFull(String fullName) {
     final parts = fullName.split(',').map((p) => p.trim()).toList();
@@ -123,40 +120,24 @@ class _ScanQRState extends State<ScanQR> {
     );
   }
 
-  Future<void> _handleCameraDetect(BarcodeCapture capture) async {
+  void _handleCameraDetect(BarcodeCapture capture) {
     if (_hasScanned) return;
     final code = capture.barcodes.isNotEmpty
         ? capture.barcodes.first.rawValue
         : null;
     if (code == null || code.isEmpty) return;
     _hasScanned = true;
-    await _controller.stop();
-    await _processQR(code);
-    if (!mounted) return;
-    _hasScanned = false;
-    await _controller.start();
-  }
-
-  Future<void> _requestCamera() async {
-    if (_startingCamera) return;
-    _startingCamera = true;
-    try {
-      if (_controller.value.isRunning) {
-        return;
-      }
-      await _controller.start();
+    _resetTimer?.cancel();
+    _processQR(code);
+    _resetTimer = Timer(const Duration(seconds: 2), () {
       if (!mounted) return;
-      setState(() => _cameraError = null);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _cameraError = e.toString());
-    } finally {
-      _startingCamera = false;
-    }
+      setState(() => _hasScanned = false);
+    });
   }
 
   @override
   void dispose() {
+    _resetTimer?.cancel();
     _codeController.dispose();
     _controller.dispose();
     super.dispose();
@@ -174,12 +155,17 @@ class _ScanQRState extends State<ScanQR> {
       body: Container(
         decoration: appBackgroundDecoration(context),
         child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                   const Text(
                     "Log Attendance",
                     style: TextStyle(
@@ -239,17 +225,10 @@ class _ScanQRState extends State<ScanQR> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _requestCamera,
-                        child: const Text("Try enable camera"),
-                      ),
                     ],
                     TextButton(
-                      onPressed: () async {
+                      onPressed: () {
                         setState(() => _useCamera = false);
-                        if (_controller.value.isRunning) {
-                          await _controller.stop();
-                        }
                       },
                       child: const Text("Use manual entry"),
                     ),
@@ -266,12 +245,8 @@ class _ScanQRState extends State<ScanQR> {
                     const SizedBox(height: 12),
                     if (kIsWeb)
                       TextButton(
-                        onPressed: () async {
-                          if (_controller.value.isRunning) {
-                            await _controller.stop();
-                          }
+                        onPressed: () {
                           setState(() => _useCamera = true);
-                          await _requestCamera();
                         },
                         child: const Text("Use camera scanner"),
                       ),
@@ -323,9 +298,13 @@ class _ScanQRState extends State<ScanQR> {
                       color: Color(0xFFEAF7FF),
                     ),
                   ),
-                ],
-              ),
-            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
